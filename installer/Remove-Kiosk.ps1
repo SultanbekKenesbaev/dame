@@ -23,5 +23,6 @@ Set-CimInstance -CimInstance $instance | Out-Null
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 }
 Unregister-ScheduledTask -TaskName 'DailyGate Demo Client' -Confirm:$false -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName 'DailyGate Desktop Client' -Confirm:$false -ErrorAction SilentlyContinue
 Stop-Service DailyGateService -ErrorAction SilentlyContinue
 Write-Host 'DailyGate startup configuration removed. Restart Windows, then uninstall DailyGate.' -ForegroundColor Yellow

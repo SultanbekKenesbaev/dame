@@ -23,14 +23,33 @@ public partial class MainWindow : Window
     private DateTimeOffset _startedAt;
     private DateTimeOffset _deadline;
     private bool _submitting;
-    private readonly bool _demoMode = Environment.GetCommandLineArgs()
-        .Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
+    private readonly bool _desktopMode = Environment.GetCommandLineArgs()
+        .Any(argument => argument.Equals("--desktop", StringComparison.OrdinalIgnoreCase)
+            || argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
     private bool _allowClose;
 
     public MainWindow()
     {
         InitializeComponent();
-        DemoModeBadge.Visibility = _demoMode ? Visibility.Visible : Visibility.Collapsed;
+        if (_desktopMode)
+        {
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            ResizeMode = ResizeMode.CanResize;
+            WindowState = WindowState.Normal;
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            Topmost = false;
+            ShowInTaskbar = true;
+            Width = 1100;
+            Height = 700;
+            MinWidth = 900;
+            MinHeight = 600;
+            DesktopModeBadge.Visibility = Visibility.Visible;
+            ModeDescriptionText.Text = "Рабочий стол остаётся доступным. Тест можно пройти сейчас или вернуться к нему позже.";
+            LoginEyebrow.Text = "ЕЖЕДНЕВНЫЙ ТЕСТ";
+            RecoveryLink.Visibility = Visibility.Collapsed;
+            SubmitButton.Content = "Отправить тест";
+            System.Windows.Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+        }
         QuestionsList.ItemsSource = _questions;
         _poll.Tick += async (_, _) => await RefreshStatusAsync(silent: true);
         _countdown.Tick += async (_, _) => await TickCountdownAsync();
@@ -104,7 +123,7 @@ public partial class MainWindow : Window
     private void LoadTest(SignedDailyTest signed)
     {
         _payload = signed.Payload(); _questions.Clear();
-        DemoTestExitButton.Visibility = Visibility.Collapsed;
+        DesktopTestExitButton.Visibility = Visibility.Collapsed;
         foreach (var question in _payload.Questions) _questions.Add(new QuestionViewModel(question));
         TestTitle.Text = _payload.Title; _deadline = _startedAt.AddMinutes(_payload.TimeLimitMinutes);
         LoginPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed; BlockingError.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Visible;
@@ -138,7 +157,7 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             TestError.Text = exception.Message;
-            DemoTestExitButton.Visibility = _demoMode ? Visibility.Visible : Visibility.Collapsed;
+            DesktopTestExitButton.Visibility = _desktopMode ? Visibility.Visible : Visibility.Collapsed;
             SubmitButton.IsEnabled = true;
             _submitting = false;
         }
@@ -181,12 +200,12 @@ public partial class MainWindow : Window
     {
         LoginPanel.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed;
         BlockingErrorText.Text = message; BlockingError.Visibility = Visibility.Visible;
-        DemoExitButton.Visibility = _demoMode ? Visibility.Visible : Visibility.Collapsed;
+        DesktopExitButton.Visibility = _desktopMode ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void ExitDemoButton_Click(object sender, RoutedEventArgs e)
+    private void ExitDesktopButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!_demoMode) return;
+        if (!_desktopMode) return;
         _allowClose = true;
         HideShields();
         System.Windows.Application.Current.Shutdown();
@@ -202,6 +221,7 @@ public partial class MainWindow : Window
 
     private void ShowShields()
     {
+        if (_desktopMode) return;
         if (_shields.Count > 0) return;
         var primary = System.Windows.Forms.Screen.PrimaryScreen;
         foreach (var screen in System.Windows.Forms.Screen.AllScreens.Where(screen => screen != primary))
@@ -214,7 +234,7 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
-        if (_allowClose) return;
+        if (_desktopMode || _allowClose) return;
         e.Cancel = true; if (!IsVisible) Show(); Activate();
     }
 }

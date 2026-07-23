@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory = $true)][ValidatePattern('^https://')][string]$ApiUrl,
     [Parameter(Mandatory = $true)][string]$EnrollmentCode,
     [string]$DeviceName = $env:COMPUTERNAME,
-    [string]$DemoUser,
+    [Alias('DemoUser')][string]$DesktopUser,
+    [switch]$KioskMode,
     [switch]$DemoMode
 )
 
@@ -16,9 +17,15 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 
 $edition = (Get-ComputerInfo -Property WindowsProductName).WindowsProductName
 $supportsKiosk = $edition -match 'Enterprise|Education|IoT'
-$useDemoMode = $DemoMode -or -not $supportsKiosk
-if ($useDemoMode) {
-    Write-Warning "DailyGate demo mode is being configured for $edition. It does not provide a secure kiosk boundary."
+if ($KioskMode -and $DemoMode) {
+    throw 'Choose either -KioskMode or the default desktop mode.'
+}
+if ($KioskMode -and -not $supportsKiosk) {
+    throw "Kiosk mode requires Windows Enterprise, Education or IoT Enterprise. Current edition: $edition"
+}
+$useDesktopMode = -not $KioskMode
+if ($useDesktopMode) {
+    Write-Host "DailyGate desktop mode is being configured for $edition. Windows will remain fully available." -ForegroundColor Cyan
 }
 
 $serviceExe = Join-Path $env:ProgramFiles 'DailyGate\Service\DailyGate.Service.exe'
@@ -29,28 +36,30 @@ if (-not (Test-Path $clientExe)) { throw 'DailyGate client is missing. Repair or
 
 Stop-Service -Name DailyGateService -ErrorAction SilentlyContinue
 $enrollArguments = @('enroll', '--api-url', $ApiUrl.TrimEnd('/'), '--code', $EnrollmentCode, '--name', $DeviceName)
-if ($useDemoMode) { $enrollArguments += '--demo-mode' }
+if ($useDesktopMode) { $enrollArguments += '--demo-mode' }
 & $serviceExe @enrollArguments
 if ($LASTEXITCODE -ne 0) { throw "Device enrollment failed with exit code $LASTEXITCODE." }
 Set-Service -Name DailyGateService -StartupType Automatic
 Start-Service -Name DailyGateService
 
-$demoTaskName = 'DailyGate Demo Client'
-Unregister-ScheduledTask -TaskName $demoTaskName -Confirm:$false -ErrorAction SilentlyContinue
-if ($useDemoMode) {
-    $currentUser = $DemoUser
+$desktopTaskName = 'DailyGate Desktop Client'
+Unregister-ScheduledTask -TaskName 'DailyGate Demo Client' -Confirm:$false -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName $desktopTaskName -Confirm:$false -ErrorAction SilentlyContinue
+if ($useDesktopMode) {
+    $currentUser = $DesktopUser
     if ([string]::IsNullOrWhiteSpace($currentUser)) {
         $currentUser = (Get-CimInstance Win32_ComputerSystem).UserName
     }
     if ([string]::IsNullOrWhiteSpace($currentUser)) {
         $currentUser = $identity.Name
     }
-    $demoAction = New-ScheduledTaskAction -Execute $clientExe -Argument '--demo'
-    $demoTrigger = New-ScheduledTaskTrigger -AtLogOn -User $currentUser
-    $demoPrincipal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
-    Register-ScheduledTask -TaskName $demoTaskName -Action $demoAction -Trigger $demoTrigger -Principal $demoPrincipal -Force | Out-Null
-    Write-Host "DailyGate was enrolled in demo mode for $currentUser." -ForegroundColor Green
-    Write-Host 'Sign out and sign in again to start the client. Use the safe exit button if the service is unavailable.' -ForegroundColor Yellow
+    $desktopAction = New-ScheduledTaskAction -Execute $clientExe -Argument '--desktop'
+    $desktopTrigger = New-ScheduledTaskTrigger -AtLogOn -User $currentUser
+    $desktopTrigger.Delay = 'PT5S'
+    $desktopPrincipal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
+    Register-ScheduledTask -TaskName $desktopTaskName -Action $desktopAction -Trigger $desktopTrigger -Principal $desktopPrincipal -Force | Out-Null
+    Write-Host "DailyGate was enrolled in desktop mode for $currentUser." -ForegroundColor Green
+    Write-Host 'Sign out and sign in again. DailyGate will open after the Windows desktop and may be minimized or closed.' -ForegroundColor Yellow
     return
 }
 
