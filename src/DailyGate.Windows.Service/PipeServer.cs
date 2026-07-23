@@ -64,6 +64,10 @@ public sealed class PipeServer(ClientCommandHandler handler, ILogger<PipeServer>
 
     private static void AuthorizeClient(NamedPipeServerStream pipe)
     {
+        if (!File.Exists(ServicePaths.Settings)) return;
+        var settings = DeviceCredentialStore.LoadSettings();
+        if (settings.DemoMode) return;
+
         string? sid = null;
         var isAdministrator = false;
         pipe.RunAsClient(() =>
@@ -74,8 +78,7 @@ public sealed class PipeServer(ClientCommandHandler handler, ILogger<PipeServer>
             isAdministrator = new WindowsPrincipal(identity)
                 .IsInRole(WindowsBuiltInRole.Administrator);
         });
-        var settings = DeviceCredentialStore.LoadSettings();
-        if (string.IsNullOrWhiteSpace(sid) || !settings.DemoMode && isAdministrator)
+        if (string.IsNullOrWhiteSpace(sid) || isAdministrator)
             throw new UnauthorizedAccessException("Only the managed standard kiosk profile may use the DailyGate pipe.");
 
         var allowedSid = settings.AllowedClientSid;

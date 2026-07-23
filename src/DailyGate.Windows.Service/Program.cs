@@ -22,5 +22,7 @@ builder.Services.AddHttpClient<DeviceApiClient>().ConfigurePrimaryHttpMessageHan
 });
 builder.Services.AddHostedService<PipeServer>();
 builder.Services.AddHostedService<DailyGateWorker>();
+builder.Services.Configure<HostOptions>(options =>
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 
 await builder.Build().RunAsync();
