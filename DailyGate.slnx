@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/DailyGate.Shared/DailyGate.Shared.csproj" />
+  <Project Path="src/DailyGate.Api/DailyGate.Api.csproj" />
+  <Project Path="src/DailyGate.Api.Tests/DailyGate.Api.Tests.csproj" />
+  <Project Path="src/DailyGate.Windows.Service/DailyGate.Windows.Service.csproj" />
+  <Project Path="src/DailyGate.Windows.Client/DailyGate.Windows.Client.csproj" />
+</Solution>

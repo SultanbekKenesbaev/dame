@@ -1,0 +1,13 @@
+services:
+  api:
+    ports:
+      - "127.0.0.1:18088:8080"
+
+  web:
+    ports:
+      - "127.0.0.1:13000:3000"
+
+  # The target VPS already uses nginx for ports 80/443. Caddy stays available
+  # for a clean server, but is excluded from the default VPS deployment.
+  caddy:
+    profiles: ["embedded-caddy"]

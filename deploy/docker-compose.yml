@@ -1,0 +1,103 @@
+name: dailygate
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dailygate}
+      POSTGRES_USER: ${POSTGRES_USER:-dailygate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dailygate} -d ${POSTGRES_DB:-dailygate}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [backend]
+
+  api:
+    build:
+      context: ..
+      dockerfile: src/DailyGate.Api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=${POSTGRES_DB:-dailygate};Username=${POSTGRES_USER:-dailygate};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: DailyGate
+      Jwt__Audience: DailyGate.Admin
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in deploy/.env}
+      DailyGate__TimeZoneId: ${TIME_ZONE_ID:-Asia/Samarkand}
+      DailyGate__WorkdayStartHour: 4
+      DailyGate__OfflineLeaseDays: 7
+      DailyGate__SigningKeyPath: /app/data/server-signing-key.pem
+      DailyGate__RunBootstrap: "true"
+      DailyGate__RunWorker: "false"
+      BootstrapAdmin__Login: ${BOOTSTRAP_ADMIN_LOGIN:-admin}
+      BootstrapAdmin__Password: ${BOOTSTRAP_ADMIN_PASSWORD:?Set BOOTSTRAP_ADMIN_PASSWORD in deploy/.env}
+    volumes:
+      - signing-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend, edge]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: src/DailyGate.Api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      ASPNETCORE_URLS: http://+:8081
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=${POSTGRES_DB:-dailygate};Username=${POSTGRES_USER:-dailygate};Password=${POSTGRES_PASSWORD}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      DailyGate__TimeZoneId: ${TIME_ZONE_ID:-Asia/Samarkand}
+      DailyGate__WorkdayStartHour: 4
+      DailyGate__OfflineLeaseDays: 7
+      DailyGate__SigningKeyPath: /app/data/server-signing-key.pem
+      DailyGate__RunBootstrap: "false"
+      DailyGate__RunWorker: "true"
+    volumes:
+      - signing-data:/app/data
+    networks: [backend]
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    networks: [edge]
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on: [api, web]
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [edge]
+
+volumes:
+  postgres-data:
+  signing-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  backend: { internal: true }
+  edge:

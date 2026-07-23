@@ -1,0 +1,78 @@
+<Window x:Class="DailyGate.Windows.Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:DailyGate.Windows.Client.ViewModels"
+        Title="DailyGate" WindowStyle="None" ResizeMode="NoResize"
+        WindowState="Maximized" Topmost="True" ShowInTaskbar="False"
+        Background="#F4F7F5" Closing="Window_Closing" Loaded="Window_Loaded">
+    <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="360"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Border Grid.Column="0" Background="#0E211F" Padding="42">
+            <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="46" Height="46" CornerRadius="13" Background="#24B485"><TextBlock Text="DG" FontWeight="Bold" FontSize="16" Foreground="#071913" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                    <StackPanel Margin="13,3,0,0"><TextBlock Text="DailyGate" Foreground="White" FontWeight="SemiBold" FontSize="18"/><TextBlock Text="ЕЖЕДНЕВНЫЙ ДОПУСК" Foreground="#779189" FontSize="9" Margin="0,4,0,0"/></StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                    <TextBlock Text="04:00" Foreground="#5BD4AA" FontWeight="Bold" FontSize="58"/>
+                    <TextBlock Text="Начало рабочего дня" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,14"/>
+                    <TextBlock Text="После отправки ежедневного теста рабочий стол откроется автоматически." Foreground="#9BB0AA" FontSize="14" TextWrapping="Wrap" LineHeight="23"/>
+                </StackPanel>
+                <StackPanel Grid.Row="2">
+                    <TextBlock x:Name="WorkdayText" Foreground="#91A7A1" FontSize="12"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0"><Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#E8A63B" Margin="0,0,8,0"/><TextBlock x:Name="ConnectionText" Text="Проверяем соединение" Foreground="#91A7A1" FontSize="11"/></StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="1" Margin="60,45">
+            <Grid x:Name="LoginPanel" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="ДОСТУП К РАБОЧЕМУ СТОЛУ" Foreground="#118260" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Text="Доброе утро" Foreground="{StaticResource Ink}" FontWeight="SemiBold" FontSize="44" Margin="0,10,0,10"/>
+                    <TextBlock Text="Войдите в свой аккаунт сотрудника и завершите ежедневный тест." Foreground="{StaticResource Muted}" FontSize="15" TextWrapping="Wrap" Margin="0,0,0,32"/>
+                    <TextBlock Text="Логин" Foreground="#42534F" FontWeight="SemiBold" Margin="0,0,0,8"/><TextBox x:Name="LoginBox" Margin="0,0,0,18"/>
+                    <TextBlock Text="Пароль" Foreground="#42534F" FontWeight="SemiBold" Margin="0,0,0,8"/><PasswordBox x:Name="PasswordBox" Margin="0,0,0,20"/>
+                    <TextBlock x:Name="LoginError" Foreground="#A23E3A" TextWrapping="Wrap" Margin="0,0,0,14" Visibility="Collapsed"/>
+                    <Button x:Name="LoginButton" Content="Войти и начать тест" Height="48" Click="LoginButton_Click"/>
+                    <Button Content="Аварийный код администратора" Background="Transparent" Foreground="#657670" Margin="0,14,0,0" Click="ShowRecovery_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid x:Name="TestPanel" Visibility="Collapsed">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="0,0,0,22"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel><TextBlock Text="ЕЖЕДНЕВНЫЙ ТЕСТ" Foreground="#118260" FontWeight="Bold" FontSize="11"/><TextBlock x:Name="TestTitle" Text="Проверка перед началом дня" Foreground="{StaticResource Ink}" FontWeight="SemiBold" FontSize="34" Margin="0,7,0,0"/><TextBlock x:Name="EmployeeName" Foreground="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel>
+                    <Border Grid.Column="1" Background="#0E211F" CornerRadius="12" Padding="18,12"><StackPanel><TextBlock Text="ОСТАЛОСЬ" Foreground="#87A098" FontSize="9" HorizontalAlignment="Center"/><TextBlock x:Name="TimerText" Text="15:00" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"/></StackPanel></Border>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><ItemsControl x:Name="QuestionsList"><ItemsControl.ItemTemplate><DataTemplate DataType="{x:Type vm:QuestionViewModel}">
+                    <Border Background="White" BorderBrush="#DFE6E3" BorderThickness="1" CornerRadius="13" Padding="24" Margin="0,0,0,13">
+                        <StackPanel><DockPanel><TextBlock Text="{Binding KindLabel}" Foreground="#80908B" FontSize="10" DockPanel.Dock="Right"/><TextBlock Text="{Binding Text}" Foreground="{StaticResource Ink}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/></DockPanel>
+                            <ItemsControl ItemsSource="{Binding Options}" Margin="0,15,0,0"><ItemsControl.ItemTemplate><DataTemplate>
+                                <CheckBox Content="{Binding Text}" IsChecked="{Binding IsSelected, Mode=TwoWay}" FontSize="14" Foreground="#344842" Margin="0,6" Padding="5"/>
+                            </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+                <DockPanel Grid.Row="2" Margin="0,20,0,0"><TextBlock x:Name="TestError" Foreground="#A23E3A" VerticalAlignment="Center" TextWrapping="Wrap"/><Button x:Name="SubmitButton" Content="Отправить и открыть Windows" DockPanel.Dock="Right" MinWidth="260" Height="48" Click="SubmitButton_Click"/></DockPanel>
+            </Grid>
+
+            <Grid x:Name="PasswordChangePanel" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                <StackPanel><TextBlock Text="ПЕРВЫЙ ВХОД" Foreground="#118260" FontWeight="Bold" FontSize="11"/><TextBlock Text="Создайте новый пароль" FontSize="38" FontWeight="SemiBold" Foreground="{StaticResource Ink}" Margin="0,10,0,10"/><TextBlock Text="Временный пароль необходимо заменить перед началом теста. Новый пароль: не менее 12 символов, заглавная и строчная буквы, цифра и специальный знак." Foreground="{StaticResource Muted}" FontSize="15" TextWrapping="Wrap" LineHeight="23" Margin="0,0,0,24"/>
+                    <TextBlock Text="Текущий пароль" Foreground="#42534F" FontWeight="SemiBold" Margin="0,0,0,8"/><PasswordBox x:Name="CurrentPasswordBox" Margin="0,0,0,16"/>
+                    <TextBlock Text="Новый пароль" Foreground="#42534F" FontWeight="SemiBold" Margin="0,0,0,8"/><PasswordBox x:Name="NewPasswordBox" Margin="0,0,0,16"/>
+                    <TextBlock Text="Повторите новый пароль" Foreground="#42534F" FontWeight="SemiBold" Margin="0,0,0,8"/><PasswordBox x:Name="ConfirmPasswordBox" Margin="0,0,0,16"/>
+                    <TextBlock x:Name="PasswordChangeError" Foreground="#A23E3A" TextWrapping="Wrap" Margin="0,0,0,12"/><Button Content="Сохранить пароль и начать тест" Height="48" Click="ChangePasswordButton_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid x:Name="RecoveryPanel" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                <StackPanel><TextBlock Text="АВАРИЙНЫЙ ДОСТУП" Foreground="#9A5B16" FontWeight="Bold" FontSize="11"/><TextBlock Text="Одноразовый код" FontSize="38" FontWeight="SemiBold" Foreground="{StaticResource Ink}" Margin="0,10,0,10"/><TextBlock Text="Получите код у администратора. Использование будет записано в журнал аудита и не заменит прохождение теста." Foreground="{StaticResource Muted}" FontSize="15" TextWrapping="Wrap" LineHeight="23" Margin="0,0,0,28"/>
+                    <TextBox x:Name="RecoveryCodeBox" FontSize="26" CharacterCasing="Upper" MaxLength="12" TextAlignment="Center" Margin="0,0,0,14"/><TextBlock x:Name="RecoveryError" Foreground="#A23E3A" TextWrapping="Wrap" Margin="0,0,0,12"/><Button Content="Проверить код" Height="48" Click="RecoveryButton_Click"/><Button Content="Вернуться ко входу" Background="Transparent" Foreground="#657670" Margin="0,12,0,0" Click="BackToLogin_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <Border x:Name="BlockingError" Background="White" BorderBrush="#E9B9B6" BorderThickness="1" CornerRadius="14" Padding="34" MaxWidth="620" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"><StackPanel><TextBlock Text="DailyGate требует внимания" Foreground="#9F3F3B" FontSize="30" FontWeight="SemiBold"/><TextBlock x:Name="BlockingErrorText" Foreground="{StaticResource Muted}" FontSize="15" TextWrapping="Wrap" Margin="0,16,0,22"/><Button Content="Повторить подключение" Click="RetryButton_Click"/></StackPanel></Border>
+        </Grid>
+    </Grid>
+</Window>

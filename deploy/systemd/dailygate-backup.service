@@ -1,0 +1,13 @@
+[Unit]
+Description=DailyGate encrypted PostgreSQL backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/dailygate/current/deploy
+ExecStart=/opt/dailygate/current/deploy/backup-postgres.sh
+User=root
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

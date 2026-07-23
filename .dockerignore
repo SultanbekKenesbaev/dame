@@ -1,0 +1,15 @@
+.git
+.nuget
+node_modules
+.next
+.vinext
+dist
+**/bin
+**/obj
+artifacts
+deploy/backups
+*.pem
+.env*
+._*
+**/._*
+.DS_Store
