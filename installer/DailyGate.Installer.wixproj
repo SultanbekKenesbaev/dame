@@ -4,6 +4,7 @@
     <OutputType>Package</OutputType>
     <ServicePublishDir Condition="'$(ServicePublishDir)' == ''">..\artifacts\windows\service</ServicePublishDir>
     <ClientPublishDir Condition="'$(ClientPublishDir)' == ''">..\artifacts\windows\client</ClientPublishDir>
+    <DefineConstants>$(DefineConstants);ServicePublishDir=$(ServicePublishDir);ClientPublishDir=$(ClientPublishDir)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.UI.wixext" Version="6.0.2" />

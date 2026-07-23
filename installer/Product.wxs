@@ -20,12 +20,12 @@
   <Fragment>
     <ComponentGroup Id="DailyGateFiles">
       <Component Directory="SERVICEFOLDER" Id="ServiceExecutable" Guid="B50233D9-A4C7-4817-B12A-7C83C5417083">
-        <File Id="DailyGateServiceExe" Source="$(ServicePublishDir)\DailyGate.Service.exe" KeyPath="yes" />
+        <File Id="DailyGateServiceExe" Source="$(var.ServicePublishDir)\DailyGate.Service.exe" KeyPath="yes" />
         <ServiceInstall Id="DailyGateServiceInstall" Name="DailyGateService" DisplayName="DailyGate Service" Description="Daily testing, offline synchronization and workday enforcement." Start="auto" Type="ownProcess" ErrorControl="normal" Account="LocalSystem" />
         <ServiceControl Id="DailyGateServiceControl" Name="DailyGateService" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
       </Component>
-      <Files Directory="SERVICEFOLDER" Include="$(ServicePublishDir)\**" Exclude="$(ServicePublishDir)\DailyGate.Service.exe" />
-      <Files Directory="CLIENTFOLDER" Include="$(ClientPublishDir)\**" />
+      <Files Directory="SERVICEFOLDER" Include="$(var.ServicePublishDir)\**" Exclude="$(var.ServicePublishDir)\DailyGate.Service.exe" />
+      <Files Directory="CLIENTFOLDER" Include="$(var.ClientPublishDir)\**" />
       <Component Directory="TOOLSFOLDER" Id="ProvisionScripts" Guid="80A46F23-16A7-46C3-A80F-9958B71A694F">
         <File Source="Provision-Device.ps1" />
         <File Source="Configure-Kiosk.ps1" />
