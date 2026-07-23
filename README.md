@@ -67,6 +67,16 @@ docker compose -f docker-compose.yml -f docker-compose.vps.yml up -d --build db 
   -CertificateThumbprint "THUMBPRINT-КОРПОРАТИВНОГО-СЕРТИФИКАТА"
 ```
 
+Для тестовой сборки на чистом Windows-ПК можно запустить загрузчик одной командой. Он скачает свежую ветку `main`, при необходимости установит локальную копию .NET 10 SDK, соберёт проект и сохранит MSI, клиент, службу, исходники и журнал сборки в новой папке `DailyGate-Build-*` на рабочем столе:
+
+```powershell
+$script = Join-Path $env:TEMP 'Get-DailyGate-Msi.ps1'
+Invoke-WebRequest 'https://raw.githubusercontent.com/SultanbekKenesbaev/dame/main/scripts/Get-DailyGate-Msi.ps1' -OutFile $script
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script
+```
+
+Ещё проще: скачать [Build-DailyGate-MSI.cmd](https://raw.githubusercontent.com/SultanbekKenesbaev/dame/main/Build-DailyGate-MSI.cmd) и запустить двойным кликом. После успешной сборки проводник автоматически выделит готовый `DailyGate.Setup.msi`. Загрузчик не удаляет и не перезаписывает предыдущие сборки. Без `-CertificateThumbprint` результат предназначен только для теста.
+
 После установки MSI администратор получает в веб-панели enrollment code и запускает:
 
 ```powershell
