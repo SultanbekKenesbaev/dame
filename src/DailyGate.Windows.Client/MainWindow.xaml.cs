@@ -23,10 +23,14 @@ public partial class MainWindow : Window
     private DateTimeOffset _startedAt;
     private DateTimeOffset _deadline;
     private bool _submitting;
+    private readonly bool _demoMode = Environment.GetCommandLineArgs()
+        .Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
+    private bool _allowClose;
 
     public MainWindow()
     {
         InitializeComponent();
+        DemoModeBadge.Visibility = _demoMode ? Visibility.Visible : Visibility.Collapsed;
         QuestionsList.ItemsSource = _questions;
         _poll.Tick += async (_, _) => await RefreshStatusAsync(silent: true);
         _countdown.Tick += async (_, _) => await TickCountdownAsync();
@@ -57,7 +61,15 @@ public partial class MainWindow : Window
             if (_status.Unlocked) UnlockDesktop();
             else if (!_status.Enrolled) ShowBlockingError(_status.Warning ?? "Устройство не зарегистрировано администратором.");
             else if (!_status.EmployeeActive) ShowBlockingError(_status.Warning ?? "Учётная запись сотрудника заблокирована.");
-            else if (!IsVisible) { Show(); Activate(); ShowShields(); }
+            else
+            {
+                if (BlockingError.Visibility == Visibility.Visible)
+                {
+                    BlockingError.Visibility = Visibility.Collapsed;
+                    LoginPanel.Visibility = Visibility.Visible;
+                }
+                if (!IsVisible) { Show(); Activate(); ShowShields(); }
+            }
         }
         catch (Exception exception)
         {
@@ -92,6 +104,7 @@ public partial class MainWindow : Window
     private void LoadTest(SignedDailyTest signed)
     {
         _payload = signed.Payload(); _questions.Clear();
+        DemoTestExitButton.Visibility = Visibility.Collapsed;
         foreach (var question in _payload.Questions) _questions.Add(new QuestionViewModel(question));
         TestTitle.Text = _payload.Title; _deadline = _startedAt.AddMinutes(_payload.TimeLimitMinutes);
         LoginPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed; BlockingError.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Visible;
@@ -122,7 +135,13 @@ public partial class MainWindow : Window
                 new ClientSubmitCommand(status, _startedAt, answers));
             UnlockDesktop();
         }
-        catch (Exception exception) { TestError.Text = exception.Message; SubmitButton.IsEnabled = true; _submitting = false; }
+        catch (Exception exception)
+        {
+            TestError.Text = exception.Message;
+            DemoTestExitButton.Visibility = _demoMode ? Visibility.Visible : Visibility.Collapsed;
+            SubmitButton.IsEnabled = true;
+            _submitting = false;
+        }
     }
 
     private async void RecoveryButton_Click(object sender, RoutedEventArgs e)
@@ -162,6 +181,15 @@ public partial class MainWindow : Window
     {
         LoginPanel.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed;
         BlockingErrorText.Text = message; BlockingError.Visibility = Visibility.Visible;
+        DemoExitButton.Visibility = _demoMode ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ExitDemoButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_demoMode) return;
+        _allowClose = true;
+        HideShields();
+        System.Windows.Application.Current.Shutdown();
     }
 
     private void UnlockDesktop()
@@ -186,6 +214,7 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
+        if (_allowClose) return;
         e.Cancel = true; if (!IsVisible) Show(); Activate();
     }
 }

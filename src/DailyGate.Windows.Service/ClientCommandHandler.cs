@@ -45,8 +45,11 @@ public sealed class ClientCommandHandler(
         var workday = WorkdayCalculator.GetWorkday(now, zone, settings.WorkdayStartHour);
         var next = WorkdayCalculator.StartOfWorkday(workday.AddDays(1), zone, settings.WorkdayStartHour);
         var seconds = Math.Max(0, (int)(next - now).TotalSeconds);
-        var warning = seconds <= 60 ? "Через минуту Windows завершит текущий сеанс. Сохраните работу."
-            : seconds <= 600 ? "В 04:00 начнётся новый рабочий день. Сохраните открытые документы." : null;
+        var warning = settings.DemoMode
+            ? seconds <= 60 ? "Через минуту начнётся новый рабочий день и откроется новый тест."
+                : seconds <= 600 ? "В 04:00 начнётся новый рабочий день. DailyGate откроет новый тест." : null
+            : seconds <= 60 ? "Через минуту Windows завершит текущий сеанс. Сохраните работу."
+                : seconds <= 600 ? "В 04:00 начнётся новый рабочий день. Сохраните открытые документы." : null;
         var test = await repository.GetTestAsync(workday);
         if (test is not null && !signatures.Verify(test.PayloadJson, test.Signature))
         {

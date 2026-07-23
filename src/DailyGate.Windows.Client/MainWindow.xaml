@@ -19,6 +19,9 @@
                     <TextBlock Text="После отправки ежедневного теста рабочий стол откроется автоматически." Foreground="#9BB0AA" FontSize="14" TextWrapping="Wrap" LineHeight="23"/>
                 </StackPanel>
                 <StackPanel Grid.Row="2">
+                    <Border x:Name="DemoModeBadge" Visibility="Collapsed" Background="#2C4B45" CornerRadius="8" Padding="10,6" Margin="0,0,0,12">
+                        <TextBlock Text="ДЕМО-РЕЖИМ · WINDOWS PRO" Foreground="#A8E8D2" FontSize="10" FontWeight="Bold"/>
+                    </Border>
                     <TextBlock x:Name="WorkdayText" Foreground="#91A7A1" FontSize="12"/>
                     <StackPanel Orientation="Horizontal" Margin="0,12,0,0"><Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#E8A63B" Margin="0,0,8,0"/><TextBlock x:Name="ConnectionText" Text="Проверяем соединение" Foreground="#91A7A1" FontSize="11"/></StackPanel>
                 </StackPanel>
@@ -54,7 +57,7 @@
                         </StackPanel>
                     </Border>
                 </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
-                <DockPanel Grid.Row="2" Margin="0,20,0,0"><TextBlock x:Name="TestError" Foreground="#A23E3A" VerticalAlignment="Center" TextWrapping="Wrap"/><Button x:Name="SubmitButton" Content="Отправить и открыть Windows" DockPanel.Dock="Right" MinWidth="260" Height="48" Click="SubmitButton_Click"/></DockPanel>
+                <Grid Grid.Row="2" Margin="0,20,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock x:Name="TestError" Foreground="#A23E3A" VerticalAlignment="Center" TextWrapping="Wrap"/><Button x:Name="DemoTestExitButton" Visibility="Collapsed" Content="Вернуться на рабочий стол" Background="Transparent" Foreground="#657670" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ExitDemoButton_Click"/></StackPanel><Button Grid.Column="1" x:Name="SubmitButton" Content="Отправить и открыть Windows" MinWidth="260" Height="48" Click="SubmitButton_Click"/></Grid>
             </Grid>
 
             <Grid x:Name="PasswordChangePanel" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
@@ -72,7 +75,7 @@
                 </StackPanel>
             </Grid>
 
-            <Border x:Name="BlockingError" Background="White" BorderBrush="#E9B9B6" BorderThickness="1" CornerRadius="14" Padding="34" MaxWidth="620" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"><StackPanel><TextBlock Text="DailyGate требует внимания" Foreground="#9F3F3B" FontSize="30" FontWeight="SemiBold"/><TextBlock x:Name="BlockingErrorText" Foreground="{StaticResource Muted}" FontSize="15" TextWrapping="Wrap" Margin="0,16,0,22"/><Button Content="Повторить подключение" Click="RetryButton_Click"/></StackPanel></Border>
+            <Border x:Name="BlockingError" Background="White" BorderBrush="#E9B9B6" BorderThickness="1" CornerRadius="14" Padding="34" MaxWidth="620" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"><StackPanel><TextBlock Text="DailyGate требует внимания" Foreground="#9F3F3B" FontSize="30" FontWeight="SemiBold"/><TextBlock x:Name="BlockingErrorText" Foreground="{StaticResource Muted}" FontSize="15" TextWrapping="Wrap" Margin="0,16,0,22"/><Button Content="Повторить подключение" Click="RetryButton_Click"/><Button x:Name="DemoExitButton" Visibility="Collapsed" Content="Вернуться на рабочий стол" Background="Transparent" Foreground="#657670" Margin="0,12,0,0" Click="ExitDemoButton_Click"/></StackPanel></Border>
         </Grid>
     </Grid>
 </Window>

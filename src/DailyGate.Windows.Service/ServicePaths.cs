@@ -19,4 +19,5 @@ public sealed record ServiceSettings(
     string ServerPublicKey,
     string TimeZoneId,
     int WorkdayStartHour,
-    string? AllowedClientSid = null);
+    string? AllowedClientSid = null,
+    bool DemoMode = false);

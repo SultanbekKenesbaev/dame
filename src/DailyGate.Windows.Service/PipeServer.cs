@@ -16,15 +16,28 @@ public sealed class PipeServer(ClientCommandHandler handler, ILogger<PipeServer>
             {
                 await using var pipe = CreatePipe();
                 await pipe.WaitForConnectionAsync(stoppingToken);
-                AuthorizeClient(pipe);
                 using var reader = new StreamReader(pipe, leaveOpen: true);
                 await using var writer = new StreamWriter(pipe, leaveOpen: true) { AutoFlush = true };
                 var line = await reader.ReadLineAsync(stoppingToken);
                 if (line is null) continue;
                 var request = JsonSerializer.Deserialize<PipeRequest>(line, JsonDefaults.Options);
-                var response = request is null
-                    ? PipeResponse.Fail("unknown", "Malformed client request.")
-                    : await handler.HandleAsync(request, stoppingToken);
+                PipeResponse response;
+                if (request is null)
+                {
+                    response = PipeResponse.Fail("unknown", "Malformed client request.");
+                }
+                else
+                {
+                    try
+                    {
+                        AuthorizeClient(pipe);
+                        response = await handler.HandleAsync(request, stoppingToken);
+                    }
+                    catch (UnauthorizedAccessException exception)
+                    {
+                        response = PipeResponse.Fail(request.Id, exception.Message);
+                    }
+                }
                 await writer.WriteLineAsync(JsonSerializer.Serialize(response, JsonDefaults.Options));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
@@ -61,10 +74,10 @@ public sealed class PipeServer(ClientCommandHandler handler, ILogger<PipeServer>
             isAdministrator = new WindowsPrincipal(identity)
                 .IsInRole(WindowsBuiltInRole.Administrator);
         });
-        if (string.IsNullOrWhiteSpace(sid) || isAdministrator)
+        var settings = DeviceCredentialStore.LoadSettings();
+        if (string.IsNullOrWhiteSpace(sid) || !settings.DemoMode && isAdministrator)
             throw new UnauthorizedAccessException("Only the managed standard kiosk profile may use the DailyGate pipe.");
 
-        var settings = DeviceCredentialStore.LoadSettings();
         var allowedSid = settings.AllowedClientSid;
         if (string.IsNullOrWhiteSpace(allowedSid))
         {

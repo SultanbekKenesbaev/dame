@@ -35,3 +35,4 @@ if (-not $CertificateThumbprint) {
 }
 
 Write-Host "Windows artifacts created in $artifacts" -ForegroundColor Green
+Write-Host "MSI installer: $msi" -ForegroundColor Green

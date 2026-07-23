@@ -26,7 +26,7 @@ public sealed class DailyGateWorker(
         var zone = TimeZoneInfo.FindSystemTimeZoneById(settings.TimeZoneId);
         var workday = WorkdayCalculator.GetWorkday(DateTimeOffset.UtcNow, zone, settings.WorkdayStartHour);
         var storedWorkday = await repository.GetAsync("last_workday");
-        if (storedWorkday is not null && storedWorkday != workday.ToString("yyyy-MM-dd"))
+        if (!settings.DemoMode && storedWorkday is not null && storedWorkday != workday.ToString("yyyy-MM-dd"))
             sessions.ForceLogoffActiveSession();
         await repository.SetAsync("last_workday", workday.ToString("yyyy-MM-dd"));
 
@@ -39,7 +39,7 @@ public sealed class DailyGateWorker(
             {
                 workday = current;
                 await repository.SetAsync("last_workday", current.ToString("yyyy-MM-dd"));
-                sessions.ForceLogoffActiveSession();
+                if (!settings.DemoMode) sessions.ForceLogoffActiveSession();
             }
 
             if (DateTimeOffset.UtcNow < nextNetworkCycle) continue;

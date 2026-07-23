@@ -14,6 +14,7 @@ public static class EnrollmentCommand
         var apiUrl = Value(args, "--api-url")?.TrimEnd('/') ?? throw new ArgumentException("--api-url is required.");
         var code = Value(args, "--code") ?? throw new ArgumentException("--code is required.");
         var name = Value(args, "--name") ?? Environment.MachineName;
+        var demoMode = args.Any(x => x.Equals("--demo-mode", StringComparison.OrdinalIgnoreCase));
 
         ServicePaths.Ensure();
         using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -33,8 +34,8 @@ public static class EnrollmentCommand
         new DeviceCredentialStore(protector).SavePrivateKey(key.ExportECPrivateKey());
         DeviceCredentialStore.SaveSettings(new ServiceSettings(
             apiUrl, enrolled.DeviceId, enrolled.EmployeeId, enrolled.EmployeeLogin,
-            enrolled.ServerPublicKey, enrolled.TimeZoneId, enrolled.WorkdayStartHour));
-        Console.WriteLine($"DailyGate device {enrolled.DeviceId} was enrolled for {enrolled.EmployeeLogin}.");
+            enrolled.ServerPublicKey, enrolled.TimeZoneId, enrolled.WorkdayStartHour, DemoMode: demoMode));
+        Console.WriteLine($"DailyGate device {enrolled.DeviceId} was enrolled for {enrolled.EmployeeLogin} ({(demoMode ? "demo" : "kiosk")} mode).");
         return 0;
     }
 
