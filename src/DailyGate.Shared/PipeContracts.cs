@@ -35,6 +35,8 @@ public sealed record ClientStatus(
     string? Warning,
     string ConnectionState);
 
+public sealed record ClientEnrollCommand(string EnrollmentCode);
+public sealed record ClientEnrollResult(Guid DeviceId, string EmployeeLogin, string DeviceName);
 public sealed record ClientLoginCommand(string Login, string Password);
 public sealed record ClientLoginResult(string FullName, bool MustChangePassword, SignedDailyTest Test, DateTimeOffset StartedAt);
 public sealed record ClientPasswordChangeCommand(string CurrentPassword, string NewPassword);
@@ -48,6 +50,7 @@ public sealed record ClientEmergencyCommand(string Code);
 public static class PipeOperations
 {
     public const string Status = "status";
+    public const string Enroll = "enroll";
     public const string Login = "login";
     public const string ChangePassword = "change_password";
     public const string Submit = "submit";

@@ -1,7 +1,10 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="DailyGate" Manufacturer="DailyGate" Version="0.3.1" UpgradeCode="6D632A58-013A-4E43-9A51-7475F8D07B0A" Scope="perMachine">
+  <Package Name="DailyGate" Manufacturer="DailyGate" Version="0.4.0" UpgradeCode="6D632A58-013A-4E43-9A51-7475F8D07B0A" Scope="perMachine">
     <MajorUpgrade DowngradeErrorMessage="A newer DailyGate version is already installed." />
     <MediaTemplate EmbedCab="yes" />
+    <InstallExecuteSequence>
+      <Custom Action="LaunchDailyGateAfterInstall" After="InstallFinalize" Condition="NOT Installed AND UILevel &gt;= 3" />
+    </InstallExecuteSequence>
     <Feature Id="Main" Title="DailyGate" Level="1">
       <ComponentGroupRef Id="DailyGateFiles" />
     </Feature>
@@ -15,6 +18,9 @@
         <Directory Id="TOOLSFOLDER" Name="Tools" />
       </Directory>
     </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="PROGRAMMENUFOLDER" Name="DailyGate" />
+    </StandardDirectory>
   </Fragment>
 
   <Fragment>
@@ -24,13 +30,32 @@
         <ServiceInstall Id="DailyGateServiceInstall" Name="DailyGateService" DisplayName="DailyGate Service" Description="Daily testing, offline synchronization and workday enforcement." Start="auto" Type="ownProcess" ErrorControl="normal" Account="LocalSystem" />
         <ServiceControl Id="DailyGateServiceControl" Name="DailyGateService" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
       </Component>
-      <Files Directory="SERVICEFOLDER" Include="$(var.ServicePublishDir)\**" Exclude="$(var.ServicePublishDir)\DailyGate.Service.exe" />
-      <Files Directory="CLIENTFOLDER" Include="$(var.ClientPublishDir)\**" />
+      <Files Directory="SERVICEFOLDER" Include="$(var.ServicePublishDir)\**">
+        <Exclude Files="$(var.ServicePublishDir)\DailyGate.Service.exe" />
+      </Files>
+      <Component Directory="CLIENTFOLDER" Id="ClientExecutable" Guid="EC70F41A-59E4-449E-B771-EC0573252C56">
+        <File Id="DailyGateClientExe" Source="$(var.ClientPublishDir)\DailyGate.Client.exe" KeyPath="yes" />
+      </Component>
+      <Files Directory="CLIENTFOLDER" Include="$(var.ClientPublishDir)\**">
+        <Exclude Files="$(var.ClientPublishDir)\DailyGate.Client.exe" />
+      </Files>
+      <Component Directory="INSTALLFOLDER" Id="ClientAutoStart" Guid="6D948275-691B-4B7D-821C-09F0FD11837E">
+        <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="DailyGate" Type="string" Value="&quot;[#DailyGateClientExe]&quot; --desktop" KeyPath="yes" />
+      </Component>
+      <Component Directory="PROGRAMMENUFOLDER" Id="ClientStartMenuShortcut" Guid="0B1988BD-E825-476F-B2D1-48430850296F">
+        <Shortcut Id="DailyGateStartMenuShortcut" Name="DailyGate" Description="DailyGate employee testing" Target="[#DailyGateClientExe]" Arguments="--desktop" WorkingDirectory="CLIENTFOLDER" />
+        <RemoveFolder Id="RemoveDailyGateProgramMenuFolder" On="uninstall" />
+        <RegistryValue Root="HKLM" Key="Software\DailyGate" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
       <Component Directory="TOOLSFOLDER" Id="ProvisionScripts" Guid="80A46F23-16A7-46C3-A80F-9958B71A694F">
         <File Source="Provision-Device.ps1" />
         <File Source="Configure-Kiosk.ps1" />
         <File Source="Remove-Kiosk.ps1" />
       </Component>
     </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <CustomAction Id="LaunchDailyGateAfterInstall" FileRef="DailyGateClientExe" ExeCommand="--desktop" Execute="immediate" Impersonate="yes" Return="asyncNoWait" />
   </Fragment>
 </Wix>

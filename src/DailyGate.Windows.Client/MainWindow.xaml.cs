@@ -31,6 +31,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        EnrollmentDeviceText.Text = Environment.MachineName;
         if (_desktopMode)
         {
             WindowStyle = WindowStyle.SingleBorderWindow;
@@ -77,22 +78,59 @@ public partial class MainWindow : Window
             }
             else if (_warning?.IsVisible == true) _warning.Hide();
 
+            LoadingPanel.Visibility = Visibility.Collapsed;
             if (_status.Unlocked) UnlockDesktop();
-            else if (!_status.Enrolled) ShowBlockingError(_status.Warning ?? "Устройство не зарегистрировано администратором.");
+            else if (!_status.Enrolled) ShowEnrollmentPanel();
             else if (!_status.EmployeeActive) ShowBlockingError(_status.Warning ?? "Учётная запись сотрудника заблокирована.");
             else
             {
-                if (BlockingError.Visibility == Visibility.Visible)
-                {
-                    BlockingError.Visibility = Visibility.Collapsed;
+                BlockingError.Visibility = Visibility.Collapsed;
+                EnrollmentPanel.Visibility = Visibility.Collapsed;
+                if (TestPanel.Visibility != Visibility.Visible
+                    && PasswordChangePanel.Visibility != Visibility.Visible
+                    && RecoveryPanel.Visibility != Visibility.Visible)
                     LoginPanel.Visibility = Visibility.Visible;
-                }
                 if (!IsVisible) { Show(); Activate(); ShowShields(); }
             }
         }
         catch (Exception exception)
         {
             if (!silent) ShowBlockingError($"Не удалось подключиться к системной службе DailyGate.\n\n{exception.Message}");
+        }
+    }
+
+    private async void EnrollmentButton_Click(object sender, RoutedEventArgs e)
+    {
+        EnrollmentError.Visibility = Visibility.Collapsed;
+        if (string.IsNullOrWhiteSpace(EnrollmentCodeBox.Text))
+        {
+            EnrollmentError.Text = "Введите код подключения из админки.";
+            EnrollmentError.Visibility = Visibility.Visible;
+            return;
+        }
+
+        EnrollmentButton.IsEnabled = false;
+        EnrollmentButton.Content = "Подключаем…";
+        try
+        {
+            var result = await _pipe.SendAsync<ClientEnrollCommand, ClientEnrollResult>(
+                PipeOperations.Enroll, new ClientEnrollCommand(EnrollmentCodeBox.Text));
+            EnrollmentCodeBox.Clear();
+            LoginBox.Text = result.EmployeeLogin;
+            EnrollmentPanel.Visibility = Visibility.Collapsed;
+            LoginPanel.Visibility = Visibility.Visible;
+            ConnectionText.Text = "Устройство подключено";
+            await RefreshStatusAsync(silent: true);
+        }
+        catch (Exception exception)
+        {
+            EnrollmentError.Text = exception.Message;
+            EnrollmentError.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            EnrollmentButton.Content = "Подключить компьютер";
+            EnrollmentButton.IsEnabled = true;
         }
     }
 
@@ -126,7 +164,7 @@ public partial class MainWindow : Window
         DesktopTestExitButton.Visibility = Visibility.Collapsed;
         foreach (var question in _payload.Questions) _questions.Add(new QuestionViewModel(question));
         TestTitle.Text = _payload.Title; _deadline = _startedAt.AddMinutes(_payload.TimeLimitMinutes);
-        LoginPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed; BlockingError.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Visible;
+        LoadingPanel.Visibility = Visibility.Collapsed; EnrollmentPanel.Visibility = Visibility.Collapsed; LoginPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed; BlockingError.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Visible;
         _countdown.Start(); _ = TickCountdownAsync();
     }
 
@@ -196,9 +234,16 @@ public partial class MainWindow : Window
     private void BackToLogin_Click(object sender, RoutedEventArgs e) { RecoveryPanel.Visibility = Visibility.Collapsed; LoginPanel.Visibility = Visibility.Visible; }
     private async void RetryButton_Click(object sender, RoutedEventArgs e) => await RefreshStatusAsync(silent: false);
 
+    private void ShowEnrollmentPanel()
+    {
+        LoadingPanel.Visibility = Visibility.Collapsed; LoginPanel.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed; BlockingError.Visibility = Visibility.Collapsed;
+        EnrollmentError.Visibility = Visibility.Collapsed;
+        EnrollmentPanel.Visibility = Visibility.Visible;
+    }
+
     private void ShowBlockingError(string message)
     {
-        LoginPanel.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed;
+        LoadingPanel.Visibility = Visibility.Collapsed; EnrollmentPanel.Visibility = Visibility.Collapsed; LoginPanel.Visibility = Visibility.Collapsed; TestPanel.Visibility = Visibility.Collapsed; RecoveryPanel.Visibility = Visibility.Collapsed; PasswordChangePanel.Visibility = Visibility.Collapsed;
         BlockingErrorText.Text = message; BlockingError.Visibility = Visibility.Visible;
         DesktopExitButton.Visibility = _desktopMode ? Visibility.Visible : Visibility.Collapsed;
     }

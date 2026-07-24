@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputName>DailyGate.Setup</OutputName>
     <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
     <ServicePublishDir Condition="'$(ServicePublishDir)' == ''">..\artifacts\windows\service</ServicePublishDir>
     <ClientPublishDir Condition="'$(ClientPublishDir)' == ''">..\artifacts\windows\client</ClientPublishDir>
     <DefineConstants>$(DefineConstants);ServicePublishDir=$(ServicePublishDir);ClientPublishDir=$(ClientPublishDir)</DefineConstants>

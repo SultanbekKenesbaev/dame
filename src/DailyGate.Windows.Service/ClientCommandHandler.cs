@@ -13,6 +13,8 @@ public sealed class ClientCommandHandler(
     ClientSession session,
     ILogger<ClientCommandHandler> logger)
 {
+    private readonly SemaphoreSlim enrollmentLock = new(1, 1);
+
     public async Task<PipeResponse> HandleAsync(PipeRequest request, CancellationToken cancellationToken)
     {
         try
@@ -20,6 +22,7 @@ public sealed class ClientCommandHandler(
             return request.Operation switch
             {
                 PipeOperations.Status => PipeResponse.Ok(request.Id, await StatusAsync()),
+                PipeOperations.Enroll => PipeResponse.Ok(request.Id, await EnrollDeviceAsync(Parse<ClientEnrollCommand>(request), cancellationToken)),
                 PipeOperations.Login => PipeResponse.Ok(request.Id, await LoginAsync(Parse<ClientLoginCommand>(request), cancellationToken)),
                 PipeOperations.ChangePassword => PipeResponse.Ok(request.Id, await ChangePasswordAsync(Parse<ClientPasswordChangeCommand>(request), cancellationToken)),
                 PipeOperations.Submit => PipeResponse.Ok(request.Id, await SubmitAsync(Parse<ClientSubmitCommand>(request), cancellationToken)),
@@ -32,6 +35,44 @@ public sealed class ClientCommandHandler(
         {
             logger.LogWarning(exception, "Client pipe operation {Operation} failed.", request.Operation);
             return PipeResponse.Fail(request.Id, Friendly(exception));
+        }
+    }
+
+    private async Task<ClientEnrollResult> EnrollDeviceAsync(ClientEnrollCommand command, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(command.EnrollmentCode))
+            throw new InvalidOperationException("Введите код подключения устройства.");
+
+        await enrollmentLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (credentials.IsEnrolled)
+            {
+                var settings = DeviceCredentialStore.LoadSettings();
+                return new ClientEnrollResult(settings.DeviceId, settings.EmployeeLogin, Environment.MachineName);
+            }
+
+            var enrolled = await EnrollmentCommand.EnrollAsync(
+                EnrollmentCommand.DefaultApiBaseUrl,
+                command.EnrollmentCode,
+                Environment.MachineName,
+                desktopMode: true,
+                cancellationToken: cancellationToken);
+
+            try
+            {
+                await SyncAsync(cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Initial device sync after enrollment failed and will be retried by the worker.");
+            }
+
+            return new ClientEnrollResult(enrolled.DeviceId, enrolled.EmployeeLogin, Environment.MachineName);
+        }
+        finally
+        {
+            enrollmentLock.Release();
         }
     }
 

@@ -16,10 +16,12 @@ public sealed class DailyGateWorker(
     {
         await repository.InitializeAsync();
         if (!credentials.IsEnrolled)
+            logger.LogInformation("DailyGate is waiting for enrollment from the desktop client.");
+        while (!credentials.IsEnrolled && !stoppingToken.IsCancellationRequested)
         {
-            logger.LogWarning("DailyGate service is not enrolled. Run DailyGate.Service.exe enroll first.");
-            return;
+            await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
         }
+        if (stoppingToken.IsCancellationRequested) return;
 
         await TrySyncAsync(stoppingToken);
         var settings = DeviceCredentialStore.LoadSettings();

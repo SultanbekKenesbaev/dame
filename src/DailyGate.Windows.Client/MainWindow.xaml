@@ -29,7 +29,30 @@
         </Border>
 
         <Grid Grid.Column="1" Margin="60,45">
-            <Grid x:Name="LoginPanel" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Grid x:Name="LoadingPanel" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="DailyGate" Foreground="{StaticResource Ink}" FontWeight="SemiBold" FontSize="38" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Подключаемся к системной службе…" Foreground="{StaticResource Muted}" FontSize="15" Margin="0,14,0,0" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid x:Name="EnrollmentPanel" MaxWidth="560" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="ПОДКЛЮЧЕНИЕ К СЕРВЕРУ" Foreground="#118260" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Text="Подключите этот компьютер" Foreground="{StaticResource Ink}" FontWeight="SemiBold" FontSize="38" Margin="0,10,0,10" TextWrapping="Wrap"/>
+                    <TextBlock Text="В админке создайте код регистрации устройства для нужного сотрудника. Код действует 15 минут и используется один раз." Foreground="{StaticResource Muted}" FontSize="15" TextWrapping="Wrap" LineHeight="23" Margin="0,0,0,26"/>
+                    <Border Background="#EAF5F1" CornerRadius="10" Padding="14" Margin="0,0,0,22">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="Компьютер: " Foreground="#657670"/><TextBlock x:Name="EnrollmentDeviceText" Foreground="{StaticResource Ink}" FontWeight="SemiBold"/></StackPanel>
+                    </Border>
+                    <TextBlock Text="15-минутный код подключения" Foreground="#42534F" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBox x:Name="EnrollmentCodeBox" CharacterCasing="Upper" MaxLength="16" TextAlignment="Center" FontSize="24" Margin="0,0,0,16"/>
+                    <TextBlock x:Name="EnrollmentError" Foreground="#A23E3A" TextWrapping="Wrap" Margin="0,0,0,14" Visibility="Collapsed"/>
+                    <Button x:Name="EnrollmentButton" Content="Подключить компьютер" Height="48" Click="EnrollmentButton_Click"/>
+                    <TextBlock Text="Сервер: mydomen.uz" Foreground="#8A9995" FontSize="12" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid x:Name="LoginPanel" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
                 <StackPanel>
                     <TextBlock x:Name="LoginEyebrow" Text="ДОСТУП К РАБОЧЕМУ СТОЛУ" Foreground="#118260" FontWeight="Bold" FontSize="11"/>
                     <TextBlock Text="Доброе утро" Foreground="{StaticResource Ink}" FontWeight="SemiBold" FontSize="44" Margin="0,10,0,10"/>
